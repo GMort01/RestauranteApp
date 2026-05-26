@@ -42,6 +42,8 @@ const OWNER_CATEGORY_OPTIONS = [
   'General',
 ] as const;
 
+const OWNER_INVENTORY_UNIT_OPTIONS = ['unidades', 'g', 'kg'] as const;
+
 type OwnerSession = {
   token: string;
   restaurantId: string;
@@ -94,6 +96,8 @@ export default function OwnerScreen() {
   const [newIngredientName, setNewIngredientName] = useState('');
   const [newIngredientStock, setNewIngredientStock] = useState('');
   const [newIngredientMin, setNewIngredientMin] = useState('');
+  const [newIngredientUnit, setNewIngredientUnit] = useState<string>(OWNER_INVENTORY_UNIT_OPTIONS[0]);
+  const [inventoryUnitDropdownOpen, setInventoryUnitDropdownOpen] = useState(false);
   const [inventoryDelta, setInventoryDelta] = useState<Record<number, string>>({});
 
   const ownerStats = useMemo(
@@ -382,11 +386,13 @@ export default function OwnerScreen() {
         ingredient_name: newIngredientName.trim(),
         stock_quantity: stock,
         minimum_quantity: min,
-        unit: 'unidades',
+        unit: newIngredientUnit,
       });
       setNewIngredientName('');
       setNewIngredientStock('');
       setNewIngredientMin('');
+      setNewIngredientUnit(OWNER_INVENTORY_UNIT_OPTIONS[0]);
+      setInventoryUnitDropdownOpen(false);
       setFeedback('Insumo creado en inventario.');
       await loadOwnerData(session.token, session.restaurantId);
     } catch (error) {
@@ -644,6 +650,28 @@ export default function OwnerScreen() {
             <TextInput style={styles.input} placeholder="Insumo (ej: peperoni)" value={newIngredientName} onChangeText={setNewIngredientName} placeholderTextColor={theme.textSecondary} />
             <TextInput style={styles.input} placeholder="Stock inicial" value={newIngredientStock} onChangeText={setNewIngredientStock} keyboardType="numeric" placeholderTextColor={theme.textSecondary} />
             <TextInput style={styles.input} placeholder="Stock mínimo" value={newIngredientMin} onChangeText={setNewIngredientMin} keyboardType="numeric" placeholderTextColor={theme.textSecondary} />
+            <View style={styles.dropdownWrapper}>
+              <TouchableOpacity style={styles.dropdownButton} onPress={() => setInventoryUnitDropdownOpen((value) => !value)}>
+                <Text style={styles.dropdownButtonText}>Unidad: {newIngredientUnit}</Text>
+                <Ionicons name={inventoryUnitDropdownOpen ? 'chevron-up' : 'chevron-down'} size={18} color={theme.textSecondary} />
+              </TouchableOpacity>
+              {inventoryUnitDropdownOpen && (
+                <View style={styles.dropdownMenu}>
+                  {OWNER_INVENTORY_UNIT_OPTIONS.map((option) => (
+                    <TouchableOpacity
+                      key={option}
+                      style={[styles.dropdownOption, newIngredientUnit === option && styles.dropdownOptionActive]}
+                      onPress={() => {
+                        setNewIngredientUnit(option);
+                        setInventoryUnitDropdownOpen(false);
+                      }}
+                    >
+                      <Text style={[styles.dropdownOptionText, newIngredientUnit === option && styles.dropdownOptionTextActive]}>{option}</Text>
+                    </TouchableOpacity>
+                  ))}
+                </View>
+              )}
+            </View>
             <TouchableOpacity style={styles.primaryButton} onPress={handleCreateInventoryItem}>
               <Text style={styles.primaryButtonText}>Añadir insumo</Text>
             </TouchableOpacity>
@@ -700,7 +728,7 @@ export default function OwnerScreen() {
                     <Text style={styles.rowTitle}>{insight.ingredient_name}</Text>
                     {getInsightRisk(insight) === 'critical' && <Text style={[styles.riskBadge, styles.riskBadgeCritical]}>ROJO</Text>}
                     {getInsightRisk(insight) === 'high' && <Text style={[styles.riskBadge, styles.riskBadgeHigh]}>NARANJA</Text>}
-                    {getInsightRisk(insight) === 'medium' && <Text style={[styles.riskBadge, styles.riskBadgeMedium]}>AMARILLO</Text>}
+                    {getInsightRisk(insight) === 'medium' && <Text style={[styles.riskBadge, styles.riskBadgeMedium]}>MEDIO</Text>}
                     {getInsightRisk(insight) === 'stable' && <Text style={[styles.riskBadge, styles.riskBadgeStable]}>VERDE</Text>}
                   </View>
                   <Text style={styles.rowSubtitle}>Stock actual: {insight.current_stock} {insight.unit}</Text>
@@ -784,7 +812,7 @@ const getStyles = (theme: Theme) =>
     riskBadge: { borderRadius: 999, paddingHorizontal: 10, paddingVertical: 3, fontSize: 11, fontWeight: '800' },
     riskBadgeCritical: { color: '#991b1b', backgroundColor: '#fee2e2' },
     riskBadgeHigh: { color: '#9a3412', backgroundColor: '#ffedd5' },
-    riskBadgeMedium: { color: '#854d0e', backgroundColor: '#fef9c3' },
+    riskBadgeMedium: { color: '#374151', backgroundColor: '#E5E7EB' },
     riskBadgeStable: { color: '#166534', backgroundColor: '#dcfce7' },
     executiveCard: { borderWidth: 1, borderColor: theme.border, borderRadius: 10, padding: 10, backgroundColor: theme.background, gap: 6 },
     executiveTitle: { color: theme.textSecondary, fontSize: 12, fontWeight: '700', textTransform: 'uppercase' },
@@ -794,7 +822,7 @@ const getStyles = (theme: Theme) =>
     executiveStatText: { fontSize: 11, fontWeight: '800', color: '#0f172a' },
     riskChipCritical: { backgroundColor: '#fee2e2' },
     riskChipHigh: { backgroundColor: '#ffedd5' },
-    riskChipMedium: { backgroundColor: '#fef9c3' },
+    riskChipMedium: { backgroundColor: '#E5E7EB' },
     riskChipStable: { backgroundColor: '#dcfce7' },
     quickActionsRow: { flexDirection: 'row', flexWrap: 'wrap', gap: 8, marginTop: 4 },
     dropdownWrapper: { gap: 6 },

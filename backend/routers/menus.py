@@ -16,6 +16,7 @@ def get_menu_items(
     is_vegan: Optional[bool] = Query(None, description="Filtrar por opción vegana"),
     db: Session = Depends(get_db),
 ):
+    # Compone una consulta dinámica para combinar filtros de menú en un solo endpoint.
     # Query dinamica para combinar filtros opcionales sin duplicar endpoints.
     query = db.query(models.MenuItem)
 
@@ -42,6 +43,7 @@ def get_menu_item(item_id: str, db: Session = Depends(get_db)):
 
 @router.post("/", response_model=schemas.MenuItemResponse, status_code=status.HTTP_201_CREATED)
 def create_menu_item(data: schemas.MenuItemCreate, db: Session = Depends(get_db)):
+    # Valida unicidad e integridad referencial antes de persistir un nuevo ítem.
     # Evita colision de ids al crear catalogo manual o desde semillas.
     existing = db.query(models.MenuItem).filter(models.MenuItem.id == data.id).first()
     if existing:
@@ -67,6 +69,7 @@ def create_menu_item(data: schemas.MenuItemCreate, db: Session = Depends(get_db)
 
 @router.put("/{item_id}", response_model=schemas.MenuItemResponse)
 def update_menu_item(item_id: str, data: schemas.MenuItemCreate, db: Session = Depends(get_db)):
+    # Aplica una actualización completa del item usando el schema ya validado.
     item = db.query(models.MenuItem).filter(models.MenuItem.id == item_id).first()
     if not item:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Ítem no encontrado")

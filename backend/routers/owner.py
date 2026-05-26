@@ -34,12 +34,14 @@ def _verify_password(password: str, password_hash: str, salt: str) -> bool:
 
 
 def _issue_owner_token(restaurant_id: str) -> str:
+    # Emite un token efímero que asocia la sesión del dueño con un restaurante concreto.
     token = secrets.token_urlsafe(32)
     OWNER_TOKENS[token] = restaurant_id
     return token
 
 
 def _ensure_owner_access(restaurant_id: str, owner_token: str | None) -> None:
+    # Protege todos los endpoints de dueño validando token y restaurante autorizado.
     if not owner_token:
         raise HTTPException(status_code=401, detail="Falta token de dueño")
     expected_restaurant = OWNER_TOKENS.get(owner_token)
@@ -108,6 +110,7 @@ def _auto_register_consumption_for_order(
     restaurant_id: str,
     order: models.Order,
 ) -> None:
+    # Descuenta inventario automáticamente cuando un pedido aceptado coincide con ingredientes rastreados.
     inventory_items = (
         db.query(models.InventoryItem)
         .filter(models.InventoryItem.restaurant_id == restaurant_id)
@@ -161,6 +164,7 @@ def _auto_register_consumption_for_order(
 
 @router.post("/auth/register", response_model=schemas.OwnerAuthResponse, status_code=status.HTTP_201_CREATED)
 def owner_auth_register(data: schemas.OwnerAuthRegister, db: Session = Depends(get_db)):
+    # Crea restaurante, perfil comercial y cuenta de dueño en una sola operación de onboarding.
     owner_name = data.owner_name.strip()
     restaurant_name = data.restaurant_name.strip()
     email = _normalize_email(data.email)
@@ -257,6 +261,7 @@ def _serialize_business_profile(
 
 @router.post("/auth/login", response_model=schemas.OwnerAuthResponse)
 def owner_auth_login(data: schemas.OwnerAuthLogin, db: Session = Depends(get_db)):
+    # Autentica al dueño y entrega un token ligado al restaurante que administrará.
     email = _normalize_email(data.email)
     password = data.password.strip()
 
@@ -362,6 +367,7 @@ def owner_get_menu(
     db: Session = Depends(get_db),
     owner_token: str | None = Header(default=None, alias="x-owner-token"),
 ):
+    # Expone el menú editable del restaurante filtrado para el panel de administración.
     _ensure_owner_access(restaurant_id, owner_token)
     _get_restaurant_or_404(restaurant_id, db)
     return (
@@ -383,6 +389,7 @@ def owner_create_menu_item(
     db: Session = Depends(get_db),
     owner_token: str | None = Header(default=None, alias="x-owner-token"),
 ):
+    # Crea productos del panel dueño inyectando metadata del restaurante actual.
     _ensure_owner_access(restaurant_id, owner_token)
     restaurant = _get_restaurant_or_404(restaurant_id, db)
 
@@ -475,6 +482,7 @@ def owner_get_orders(
     db: Session = Depends(get_db),
     owner_token: str | None = Header(default=None, alias="x-owner-token"),
 ):
+    # Recupera solo pedidos que contienen ítems del restaurante y adjunta su estado interno de dueño.
     _ensure_owner_access(restaurant_id, owner_token)
     _get_restaurant_or_404(restaurant_id, db)
 
@@ -513,6 +521,7 @@ def owner_update_order_status(
     db: Session = Depends(get_db),
     owner_token: str | None = Header(default=None, alias="x-owner-token"),
 ):
+    # Cambia el estado operativo del pedido y dispara consumo automático de inventario cuando aplica.
     _ensure_owner_access(restaurant_id, owner_token)
     _get_restaurant_or_404(restaurant_id, db)
 
@@ -594,6 +603,7 @@ def owner_create_inventory_item(
     db: Session = Depends(get_db),
     owner_token: str | None = Header(default=None, alias="x-owner-token"),
 ):
+    # Registra un insumo base del restaurante con cantidades mínimas para seguimiento.
     _ensure_owner_access(restaurant_id, owner_token)
     _get_restaurant_or_404(restaurant_id, db)
     item = models.InventoryItem(
@@ -620,6 +630,7 @@ def owner_adjust_inventory(
     db: Session = Depends(get_db),
     owner_token: str | None = Header(default=None, alias="x-owner-token"),
 ):
+    # Ajusta stock manualmente y deja trazabilidad del movimiento en el inventario.
     _ensure_owner_access(restaurant_id, owner_token)
     _get_restaurant_or_404(restaurant_id, db)
     item = (
@@ -659,6 +670,7 @@ def owner_inventory_insights(
     db: Session = Depends(get_db),
     owner_token: str | None = Header(default=None, alias="x-owner-token"),
 ):
+    # Calcula cobertura, urgencia y recomendaciones de reposición a partir del consumo reciente.
     _ensure_owner_access(restaurant_id, owner_token)
     _get_restaurant_or_404(restaurant_id, db)
 

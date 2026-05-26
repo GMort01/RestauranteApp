@@ -37,6 +37,7 @@ export interface CartItem extends MenuItem {
 export interface Purchase {
   id: string;
   date: string;
+  timestamp?: number;
   backendOrderId?: number;
   paymentMethod?: 'tarjeta' | 'billetera' | 'efectivo';
   items: CartItem[];

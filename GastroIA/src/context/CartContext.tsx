@@ -34,11 +34,13 @@ export const CartContext = createContext<CartContextType>({
 });
 
 export function CartProvider({ children }: { children: React.ReactNode }) {
+  // Estado base del carrito y la propina consumido por checkout y resumen global.
   const [cartItems, setCartItems] = useState<CartItem[]>([]);
   const [tip, setTip] = useState<number>(0);
   const [hydrated, setHydrated] = useState<boolean>(false);
 
   useEffect(() => {
+    // Rehidrata carrito y propina antes de exponerlos al resto de la aplicación.
     const loadCart = async () => {
       try {
         // Restaura carrito y propina para mantener continuidad entre sesiones.
@@ -68,6 +70,7 @@ export function CartProvider({ children }: { children: React.ReactNode }) {
     AsyncStorage.setItem(CART_STORAGE_KEY, JSON.stringify({ cartItems, tip }));
   }, [cartItems, tip, hydrated]);
 
+  // Inserta o incrementa un producto manteniendo una única entrada por item.
   const addItem = (item: MenuItem) => {
     setCartItems((prevItems) => {
       const existing = prevItems.find((cartItem) => cartItem.id === item.id);
@@ -95,6 +98,7 @@ export function CartProvider({ children }: { children: React.ReactNode }) {
     );
   };
 
+  // Evita cantidades inválidas y mantiene consistente el estado del carrito.
   const decreaseQuantity = (itemId: string) => {
     setCartItems((prevItems) =>
       prevItems
@@ -113,12 +117,14 @@ export function CartProvider({ children }: { children: React.ReactNode }) {
     setTip(0);
   };
 
+  // Sumatoria derivada del carrito usada por el flujo de compra y propina.
   const subtotal = useMemo(
     // Derivado memoizado para evitar recalculos en cada render.
     () => cartItems.reduce((sum, item) => sum + item.precio * item.quantity, 0),
     [cartItems]
   );
 
+  // Derivados memoizados para mostrar total y contador sin cálculos manuales repetidos.
   const total = useMemo(() => subtotal + tip, [subtotal, tip]);
 
   const cartCount = useMemo(

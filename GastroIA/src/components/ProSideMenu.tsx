@@ -1,7 +1,7 @@
 // src/components/ProSideMenu.tsx
 import React from 'react';
 import { useEffect, useState } from 'react';
-import { View, Text, StyleSheet, TouchableOpacity, Modal, ScrollView } from 'react-native';
+import { View, Text, StyleSheet, TouchableOpacity, Modal, ScrollView, Platform } from 'react-native';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons, MaterialCommunityIcons } from '@expo/vector-icons';
@@ -237,7 +237,19 @@ const getStyles = (theme: Theme) =>
   StyleSheet.create({
     overlay: { flex: 1, flexDirection: 'row', backgroundColor: 'rgba(15,23,42,0.42)' },
     backgroundTouch: { flex: 1 },
-    menuContainer: { width: '78%', height: '100%', backgroundColor: theme.surface, position: 'absolute', left: 0, shadowColor: '#000', shadowOffset: { width: 8, height: 0 }, shadowOpacity: 0.18, shadowRadius: 18, elevation: 14 },
+    menuContainer: {
+      width: Platform.OS === 'web' ? 320 : '78%',
+      maxWidth: Platform.OS === 'web' ? 360 : undefined,
+      height: '100%',
+      backgroundColor: theme.surface,
+      position: 'absolute',
+      left: 0,
+      shadowColor: '#000',
+      shadowOffset: { width: 8, height: 0 },
+      shadowOpacity: 0.18,
+      shadowRadius: 18,
+      elevation: 14,
+    },
     profileHeader: { backgroundColor: theme.primary, paddingTop: 44, paddingBottom: 32, paddingHorizontal: 20, alignItems: 'flex-start' },
     userName: { color: theme.surface, fontSize: 21, fontWeight: '800', marginTop: 10 },
     userEmail: { color: 'rgba(255,255,255,0.82)', fontSize: 13, marginTop: 4 },

@@ -38,6 +38,7 @@ def get_order(order_id: int, db: Session = Depends(get_db)):
 
 @router.post("/", response_model=schemas.OrderResponse, status_code=status.HTTP_201_CREATED)
 def create_order(data: schemas.OrderCreate, db: Session = Depends(get_db)):
+    # Valida items y recalcula subtotal/total con precios del servidor antes de persistir.
     if not data.items:
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
@@ -102,6 +103,7 @@ def create_order(data: schemas.OrderCreate, db: Session = Depends(get_db)):
 
 @router.delete("/{order_id}", status_code=status.HTTP_204_NO_CONTENT)
 def delete_order(order_id: int, db: Session = Depends(get_db)):
+    # Elimina el pedido solo si existe para mantener consistencia transaccional.
     order = db.query(models.Order).filter(models.Order.id == order_id).first()
     if not order:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Pedido no encontrado")

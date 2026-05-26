@@ -34,6 +34,7 @@ interface AuthContextType {
   login: (input: LoginInput) => Promise<void>;
   register: (input: RegisterInput) => Promise<void>;
   resetPassword: (input: ResetPasswordInput) => Promise<void>;
+  updateCurrentUser: (input: Partial<AuthUser>) => Promise<void>;
   logout: () => Promise<void>;
 }
 
@@ -46,6 +47,7 @@ export const AuthContext = createContext<AuthContextType>({
   login: async () => {},
   register: async () => {},
   resetPassword: async () => {},
+  updateCurrentUser: async () => {},
   logout: async () => {},
 });
 
@@ -66,9 +68,11 @@ function sanitizeUser(user: StoredUser): AuthUser {
 }
 
 export function AuthProvider({ children }: { children: React.ReactNode }) {
+  // Estado fuente de la sesión autenticada compartida por toda la app.
   const [currentUser, setCurrentUser] = useState<AuthUser | null>(null);
 
   useEffect(() => {
+    // Rehidrata la sesión persistida para recuperar login al reiniciar la app.
     const hydrateSession = async () => {
       try {
         // Rehidrata sesion local para mantener login entre aperturas.
@@ -87,6 +91,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     hydrateSession();
   }, []);
 
+  // Valida credenciales contra backend y persiste solo el perfil público local.
   const login = async ({ email, password }: LoginInput) => {
     const safeEmail = normalizeEmail(email);
     const safePassword = password.trim();
@@ -106,6 +111,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     await AsyncStorage.setItem(SESSION_STORAGE_KEY, JSON.stringify(publicUser));
   };
 
+  // Crea la cuenta remota y deja al usuario autenticado en el dispositivo.
   const register = async ({ name, email, password }: RegisterInput) => {
     const safeName = name.trim();
     const safeEmail = normalizeEmail(email);
@@ -134,6 +140,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     await AsyncStorage.setItem(SESSION_STORAGE_KEY, JSON.stringify(publicUser));
   };
 
+  // Delegación centralizada del cambio de contraseña al backend.
   const resetPassword = async ({ email, newPassword }: ResetPasswordInput) => {
     const safeEmail = normalizeEmail(email);
     const safePassword = newPassword.trim();
@@ -157,6 +164,21 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     });
   };
 
+  // Sincroniza cambios del perfil visible con la sesión ya almacenada localmente.
+  const updateCurrentUser = async (input: Partial<AuthUser>) => {
+    setCurrentUser((prev) => {
+      if (!prev) return prev;
+      const nextUser = {
+        ...prev,
+        ...input,
+      };
+
+      AsyncStorage.setItem(SESSION_STORAGE_KEY, JSON.stringify(nextUser)).catch(() => {});
+      return nextUser;
+    });
+  };
+
+  // Cierra sesión borrando el estado en memoria y su persistencia local.
   const logout = async () => {
     // Cierra sesion local de forma explicita.
     setCurrentUser(null);
@@ -171,6 +193,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         login,
         register,
         resetPassword,
+        updateCurrentUser,
         logout,
       }}
     >

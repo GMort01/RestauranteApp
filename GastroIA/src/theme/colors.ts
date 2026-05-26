@@ -4,7 +4,7 @@ import { Theme } from '../types';
 export const lightTheme: Theme = {
   primary: '#2E6B62',
   primaryLight: '#D7E8E3',
-  background: '#F3F1EC',
+  background: '#fdfdfd',
   surface: '#FFFEFB',
   text: '#1F2A37',
   textSecondary: '#6B7280',

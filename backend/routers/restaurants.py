@@ -31,6 +31,7 @@ def get_restaurant(restaurant_id: str, db: Session = Depends(get_db)):
 
 @router.post("/", response_model=schemas.RestaurantResponse, status_code=status.HTTP_201_CREATED)
 def create_restaurant(data: schemas.RestaurantCreate, db: Session = Depends(get_db)):
+    # Protege la creación validando unicidad antes de persistir el restaurante.
     # Validacion preventiva para mantener unicidad por id de restaurante.
     existing = db.query(models.Restaurant).filter(models.Restaurant.id == data.id).first()
     if existing:
@@ -49,6 +50,7 @@ def create_restaurant(data: schemas.RestaurantCreate, db: Session = Depends(get_
 def update_restaurant(
     restaurant_id: str, data: schemas.RestaurantCreate, db: Session = Depends(get_db)
 ):
+    # Reemplaza el estado persistido con el payload validado del restaurante.
     restaurant = db.query(models.Restaurant).filter(
         models.Restaurant.id == restaurant_id
     ).first()

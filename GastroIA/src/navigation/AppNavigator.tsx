@@ -22,6 +22,7 @@ const Stack = createNativeStackNavigator<RootStackParamList>();
 export default function AppNavigator() {
   const { theme, darkMode } = useSettings();
 
+  // Deriva el tema de navegación desde la configuración global para unificar colores del stack.
   const baseTheme = darkMode ? DarkTheme : DefaultTheme;
   const navigationTheme = {
     ...baseTheme,
@@ -38,6 +39,7 @@ export default function AppNavigator() {
 
   return (
     <NavigationContainer theme={navigationTheme}>
+      // Stack principal que conecta onboarding, flujo de usuario y flujo de dueño.
       <Stack.Navigator
         id={undefined}
         initialRouteName="Welcome"

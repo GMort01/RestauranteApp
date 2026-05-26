@@ -6,28 +6,37 @@ import { Theme } from '../types';
 
 const SETTINGS_STORAGE_KEY = '@gastroia/settings';
 
+export type AppLanguage = 'es' | 'en';
+
 interface SettingsContextType {
   darkMode: boolean;
   notificationsEnabled: boolean;
+  language: AppLanguage;
   setDarkMode: React.Dispatch<React.SetStateAction<boolean>>;
   setNotificationsEnabled: React.Dispatch<React.SetStateAction<boolean>>;
+  setLanguage: React.Dispatch<React.SetStateAction<AppLanguage>>;
   theme: Theme;
 }
 
 export const SettingsContext = createContext<SettingsContextType>({
   darkMode: false,
   notificationsEnabled: true,
+  language: 'es',
   setDarkMode: () => {},
   setNotificationsEnabled: () => {},
+  setLanguage: () => {},
   theme: lightTheme,
 });
 
 export function SettingsProvider({ children }: { children: React.ReactNode }) {
+  // Centraliza ajustes globales de apariencia, idioma y notificaciones.
   const [darkMode, setDarkMode] = useState<boolean>(false);
   const [notificationsEnabled, setNotificationsEnabled] = useState<boolean>(true);
+  const [language, setLanguage] = useState<AppLanguage>('es');
   const [hydrated, setHydrated] = useState<boolean>(false);
 
   useEffect(() => {
+    // Rehidrata preferencias persistidas antes de aceptar nuevas escrituras.
     const loadSettings = async () => {
       try {
         // Carga preferencias visuales y de notificaciones desde almacenamiento local.
@@ -37,6 +46,7 @@ export function SettingsProvider({ children }: { children: React.ReactNode }) {
         const parsed = JSON.parse(raw) as {
           darkMode?: boolean;
           notificationsEnabled?: boolean;
+          language?: AppLanguage;
         };
 
         if (typeof parsed.darkMode === 'boolean') {
@@ -44,6 +54,9 @@ export function SettingsProvider({ children }: { children: React.ReactNode }) {
         }
         if (typeof parsed.notificationsEnabled === 'boolean') {
           setNotificationsEnabled(parsed.notificationsEnabled);
+        }
+        if (parsed.language === 'es' || parsed.language === 'en') {
+          setLanguage(parsed.language);
         }
       } catch {
         // Ignorar datos corruptos para no romper la app.
@@ -60,10 +73,11 @@ export function SettingsProvider({ children }: { children: React.ReactNode }) {
     // Persistencia reactiva de ajustes del usuario.
     AsyncStorage.setItem(
       SETTINGS_STORAGE_KEY,
-      JSON.stringify({ darkMode, notificationsEnabled })
+      JSON.stringify({ darkMode, notificationsEnabled, language })
     );
-  }, [darkMode, notificationsEnabled, hydrated]);
+  }, [darkMode, notificationsEnabled, language, hydrated]);
 
+  // Deriva la paleta global a partir del modo visual activo.
   // Seleccion de paleta global derivada del modo actual.
   const theme = useMemo<Theme>(() => (darkMode ? darkTheme : lightTheme), [darkMode]);
 
@@ -72,8 +86,10 @@ export function SettingsProvider({ children }: { children: React.ReactNode }) {
       value={{
         darkMode,
         notificationsEnabled,
+        language,
         setDarkMode,
         setNotificationsEnabled,
+        setLanguage,
         theme,
       }}
     >

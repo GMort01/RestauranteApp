@@ -35,6 +35,7 @@ def _client_key(request: Request, action: str) -> str:
 
 
 def _check_rate_limit(request: Request, action: str) -> None:
+    # Aplica rate limit por IP y acción para proteger registro, login y reset.
     now = time.monotonic()
     window = RATE_WINDOWS_SECONDS[action]
     max_requests = RATE_MAX_REQUESTS[action]
@@ -84,6 +85,7 @@ def serialize_user(user: models.User) -> schemas.UserResponse:
 
 @router.post("/register", response_model=schemas.AuthResponse, status_code=status.HTTP_201_CREATED)
 def register_user(data: schemas.UserCreate, request: Request, db: Session = Depends(get_db)):
+    # Valida input, unicidad de correo y persiste el usuario con hash y salt propios.
     _check_rate_limit(request, "register")
     name = data.name.strip()
     email = normalize_email(data.email)
@@ -133,6 +135,7 @@ def register_user(data: schemas.UserCreate, request: Request, db: Session = Depe
 
 @router.post("/login", response_model=schemas.AuthResponse)
 def login_user(data: schemas.UserLogin, request: Request, db: Session = Depends(get_db)):
+    # Autentica con mensaje genérico para no revelar si el correo existe en el sistema.
     _check_rate_limit(request, "login")
     email = normalize_email(data.email)
     password = data.password.strip()
@@ -162,6 +165,7 @@ def login_user(data: schemas.UserLogin, request: Request, db: Session = Depends(
 
 @router.post("/reset-password")
 def reset_password(data: schemas.UserResetPassword, request: Request, db: Session = Depends(get_db)):
+    # Reemplaza hash y salt de la contraseña después de validar correo y reglas mínimas.
     _check_rate_limit(request, "reset_password")
     email = normalize_email(data.email)
     new_password = data.new_password.strip()

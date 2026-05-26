@@ -26,6 +26,7 @@ const searchSynonymsMap: Record<string, string[]> = {
 // Usa Gemini para enriquecer búsquedas de lenguaje natural (>3 palabras).
 // Si Gemini falla, cae silenciosamente al filtro local original.
 async function enrichWithGemini(preferences: AIPreferences): Promise<AIPreferences> {
+  // En búsquedas largas, intenta convertir lenguaje natural en filtros estructurados.
   const search = preferences.search ?? '';
   const wordCount = search.trim().split(/\s+/).filter(Boolean).length;
   if (wordCount < 3) return preferences; // Búsquedas cortas no necesitan IA
@@ -112,6 +113,7 @@ const buildQueryVariantsFromCatalog = (search: string, catalogTokens: string[]):
 };
 
 const buildCatalogTokens = (items: MenuItem[]): string[] => {
+  // Construye un vocabulario del catálogo para mejorar variantes y matching difuso.
   const tokenSet = new Set<string>();
 
   for (const item of items) {
@@ -227,6 +229,7 @@ const scoreFuzzyMatch = (corpus: string, search: string): number => {
 };
 
 const scoreItemForQuery = (item: MenuItem, query: string): number => {
+  // Combina varias señales del item en un único puntaje de relevancia.
   if (!query.trim()) return 0;
 
   const nameScore = scoreFuzzyMatch(item.nombre, query) * 2.2;
@@ -276,6 +279,7 @@ const toMenuItemWithRestaurantMeta = (
 };
 
 export const getAIRecommendations = async (preferences: AIPreferences): Promise<MenuItem[]> => {
+  // Pipeline principal de recomendaciones: enriquecer, filtrar y rankear resultados.
   const enriched = await enrichWithGemini(preferences);
   const [allMenuItems, allRestaurants] = await Promise.all([
     fetchMenuItems(),
@@ -383,6 +387,7 @@ export const getNearbyRecommendations = async (
   preferences: AIPreferences,
   maxResults = 6
 ): Promise<MenuItem[]> => {
+  // Fallback tolerante para sugerir resultados cercanos cuando no hay match exacto.
   // Fallback: si no hay match exacto, rankea por similitud textual.
   const enriched = await enrichWithGemini(preferences);
   const [allMenuItems, allRestaurants] = await Promise.all([fetchMenuItems(), fetchRestaurants()]);

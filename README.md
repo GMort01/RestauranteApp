@@ -1,5 +1,13 @@
 ﻿# GastroIA
 
+![Estado](https://img.shields.io/badge/estado-MVP%20funcional-2ea44f)
+![Frontend](https://img.shields.io/badge/frontend-Expo%20%2B%20React%20Native-0ea5e9)
+![Backend](https://img.shields.io/badge/backend-FastAPI%20%2B%20SQLAlchemy-0f766e)
+![IA](https://img.shields.io/badge/IA-Gemini-f59e0b)
+![DB](https://img.shields.io/badge/DB-MySQL%208-1d4ed8)
+
+> Recomendador de comida con carrito, pedidos, historial, favoritos y modulo dueño con inventario e insights.
+
 GastroIA es una aplicacion full stack para descubrir que comer, recibir recomendaciones inteligentes, gestionar carrito, crear pedidos y conservar historial y favoritos, con backend real y chat asistido por IA.
 
 Este repositorio integra:
@@ -16,15 +24,17 @@ El proyecto nacio como un MVP academico y evoluciono hasta convertirse en una so
 2. [Stack tecnico](#stack-tecnico)
 3. [Estructura del repositorio](#estructura-del-repositorio)
 4. [Requisitos previos](#requisitos-previos)
-5. [Variables de entorno](#variables-de-entorno)
-6. [Instalacion](#instalacion)
-7. [Ejecucion local](#ejecucion-local)
-8. [Arquitectura funcional](#arquitectura-funcional)
-9. [Endpoints principales](#endpoints-principales)
-10. [IA y flujo de GastroBot](#ia-y-flujo-de-gastrobot)
-11. [Limitaciones conocidas](#limitaciones-conocidas)
-12. [Troubleshooting](#troubleshooting)
-13. [Equipo](#equipo)
+5. [Acceso demo rapido](#acceso-demo-rapido)
+6. [Variables de entorno](#variables-de-entorno)
+7. [Instalacion](#instalacion)
+8. [Ejecucion local](#ejecucion-local)
+9. [Arquitectura funcional](#arquitectura-funcional)
+10. [Endpoints principales](#endpoints-principales)
+11. [Ejemplos de API owner e inventario](#ejemplos-de-api-owner-e-inventario)
+12. [IA y flujo de GastroBot](#ia-y-flujo-de-gastrobot)
+13. [Limitaciones conocidas](#limitaciones-conocidas)
+14. [Troubleshooting](#troubleshooting)
+15. [Equipo](#equipo)
 
 ## Resumen Ejecutivo
 
@@ -59,16 +69,19 @@ La aplicacion esta pensada para funcionar en desarrollo local con backend FastAP
 backend/
   main.py
   database.py
+  list_models.py
   models.py
   schemas.py
   seed_menus.py
   gastroia_db.sql
   requirements.txt
   routers/
+    __init__.py
     ai.py
     auth.py
     menus.py
     orders.py
+    owner.py
     restaurants.py
 
 GastroIA/
@@ -87,6 +100,21 @@ GastroIA/
     theme/
     types/
 ```
+
+## Acceso Demo Rapido
+
+Estas credenciales son solo para demostracion local del modulo dueño y te sirven para mostrar el flujo frente a tu profesor sin tener que registrar una cuenta nueva.
+
+| Tipo | Valor |
+| --- | --- |
+| Correo demo owner | `dueno.demo@gastroia.local` |
+| Password demo owner | `Demo12345` |
+
+Notas:
+
+1. Usalas solo en entorno local o de presentacion.
+2. El demo depende de que la base tenga cargado el registro owner incluido en `backend/gastroia_db.sql`.
+3. Si restauras otra base o limpias datos, puede que necesites recrear la cuenta demo.
 
 ## Requisitos Previos
 
@@ -151,7 +179,7 @@ EXPO_PUBLIC_API_URL=http://192.168.1.8:8000
 Trabaja desde la raiz del repositorio:
 
 ```powershell
-cd C:\Users\Usuario\OneDrive\Escritorio\RestaurantApp
+cd C:\Users\Usuario\OneDrive\Escritorio\RestauranteApp-main
 ```
 
 ### 2. Preparar backend
@@ -247,7 +275,7 @@ npx expo start -c
 - SQLAlchemy ORM.
 - MySQL con PyMySQL.
 - Auth basica con hash y salt.
-- Routers por dominio: restaurantes, menus, orders, auth e IA.
+- Routers por dominio: restaurantes, menus, orders, auth, IA y owner.
 - Router owner con autenticacion dedicada y proteccion por token de dueño para operaciones de negocio.
 
 ### Datos
@@ -303,15 +331,112 @@ npx expo start -c
 
 - POST `/owner/auth/register`
 - POST `/owner/auth/login`
+- GET `/owner/restaurants/{restaurant_id}/menu`
+- POST `/owner/restaurants/{restaurant_id}/menu`
+- PUT `/owner/restaurants/{restaurant_id}/menu/{item_id}`
+- DELETE `/owner/restaurants/{restaurant_id}/menu/{item_id}`
 - GET `/owner/restaurants/{restaurant_id}/profile`
 - PATCH `/owner/restaurants/{restaurant_id}/profile`
-- GET `/owner/restaurants/{restaurant_id}/menus`
 - GET `/owner/restaurants/{restaurant_id}/orders`
 - PATCH `/owner/restaurants/{restaurant_id}/orders/{order_id}/status`
 - GET `/owner/restaurants/{restaurant_id}/inventory`
 - POST `/owner/restaurants/{restaurant_id}/inventory`
-- POST `/owner/restaurants/{restaurant_id}/inventory/{item_id}/adjust`
+- PATCH `/owner/restaurants/{restaurant_id}/inventory/{inventory_item_id}/adjust`
 - GET `/owner/restaurants/{restaurant_id}/inventory/insights`
+
+Nota: los endpoints protegidos del modulo dueño requieren el header `x-owner-token` obtenido en el login o registro de owner.
+
+## Ejemplos De API Owner E Inventario
+
+Los siguientes ejemplos estan pensados para pruebas locales con el backend en `http://127.0.0.1:8000`.
+
+### 1) Login de owner y obtencion de token
+
+Request:
+
+```http
+POST /owner/auth/login
+Content-Type: application/json
+
+{
+  "email": "dueno.demo@gastroia.local",
+  "password": "Demo12345"
+}
+```
+
+Response esperada (200):
+
+```json
+{
+  "token": "eyJv...demoToken",
+  "restaurant_id": "R1234",
+  "restaurant_name": "Demo Burger",
+  "owner_name": "Dueno Demo",
+  "message": "Sesion de dueño iniciada correctamente"
+}
+```
+
+### 2) Crear insumo de inventario
+
+Request:
+
+```http
+POST /owner/restaurants/R1234/inventory
+Content-Type: application/json
+x-owner-token: eyJv...demoToken
+
+{
+  "ingredient_name": "pan brioche",
+  "stock_quantity": 40,
+  "minimum_quantity": 10,
+  "unit": "unidades"
+}
+```
+
+Response esperada (201):
+
+```json
+{
+  "id": 7,
+  "restaurant_id": "R1234",
+  "ingredient_name": "pan brioche",
+  "stock_quantity": 40.0,
+  "minimum_quantity": 10.0,
+  "unit": "unidades",
+  "updated_at": "2026-05-26T18:45:00"
+}
+```
+
+### 3) Ajustar stock manualmente
+
+Request:
+
+```http
+PATCH /owner/restaurants/R1234/inventory/7/adjust
+Content-Type: application/json
+x-owner-token: eyJv...demoToken
+
+{
+  "delta": -6,
+  "note": "merma por preparacion"
+}
+```
+
+Response esperada (200):
+
+```json
+{
+  "id": 7,
+  "restaurant_id": "R1234",
+  "ingredient_name": "pan brioche",
+  "stock_quantity": 34.0,
+  "minimum_quantity": 10.0,
+  "unit": "unidades",
+  "updated_at": "2026-05-26T18:53:10"
+}
+```
+
+Tip rapido: para pruebas con Postman, guarda `token`, `restaurant_id` e `inventory id` en variables de entorno y reutilizalas en toda la coleccion.
 
 ## IA Y Flujo De GastroBot
 
@@ -414,7 +539,7 @@ Con el backend encendido:
 3. La IA tiene controles para evitar rafagas de peticiones.
 4. El frontend persiste datos locales para mejorar la experiencia entre sesiones.
 5. El archivo `backend/gastroia_db.sql` incluye estructura owner/inventario y un demo unico para validar el modulo dueño.
-6. Cuenta demo owner local: `dueno.demo@gastroia.local` / `Demo12345`.
+6. La cuenta demo owner tambien esta destacada arriba en la seccion `Acceso Demo Rapido` para tenerla siempre a mano durante la presentacion.
 
 ## Equipo
 

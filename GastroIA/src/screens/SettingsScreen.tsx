@@ -18,7 +18,7 @@ export default function SettingsScreen({ navigation }: Props) {
   const isLargeScreen = width >= 980;
   const horizontalPadding = isLargeScreen ? 26 : isTablet ? 20 : 14;
   const contentMaxWidth = isLargeScreen ? 980 : isTablet ? 760 : undefined;
-  const { darkMode, notificationsEnabled, setDarkMode, setNotificationsEnabled, theme } = useSettings();
+  const { darkMode, notificationsEnabled, language, setDarkMode, setNotificationsEnabled, setLanguage, theme } = useSettings();
   const styles = getStyles(theme, horizontalPadding, contentMaxWidth);
 
   return (
@@ -86,6 +86,33 @@ export default function SettingsScreen({ navigation }: Props) {
               />
             </View>
             <Text style={styles.statusText}>{darkMode ? 'Activado' : 'Desactivado'}</Text>
+
+            <View style={styles.separator} />
+
+            <View style={styles.settingRow}>
+              <View style={styles.settingIconText}>
+                <Ionicons name="language-outline" size={22} color={theme.primary} />
+                <View style={styles.settingTextBlock}>
+                  <Text style={styles.settingText}>Idioma</Text>
+                  <Text style={styles.settingHint}>
+                    Elige el idioma de preferencia para tu experiencia en la app.
+                  </Text>
+                </View>
+              </View>
+            </View>
+            <View style={styles.languageRow}>
+              {(['es', 'en'] as const).map((option) => (
+                <TouchableOpacity
+                  key={option}
+                  style={[styles.languageChip, language === option && styles.languageChipActive]}
+                  onPress={() => setLanguage(option)}
+                >
+                  <Text style={[styles.languageChipText, language === option && styles.languageChipTextActive]}>
+                    {option === 'es' ? 'Español' : 'English'}
+                  </Text>
+                </TouchableOpacity>
+              ))}
+            </View>
           </View>
 
           <View style={styles.infoCard}>
@@ -223,4 +250,19 @@ const getStyles = (theme: Theme, horizontalPadding: number, contentMaxWidth?: nu
       fontWeight: '500',
       flex: 1,
     },
+    languageRow: { flexDirection: 'row', gap: 8, flexWrap: 'wrap', marginTop: 10 },
+    languageChip: {
+      paddingVertical: 10,
+      paddingHorizontal: 14,
+      borderRadius: 999,
+      borderWidth: 1,
+      borderColor: theme.border,
+      backgroundColor: theme.background,
+    },
+    languageChipActive: {
+      backgroundColor: theme.primary,
+      borderColor: theme.primary,
+    },
+    languageChipText: { color: theme.textSecondary, fontWeight: '700', fontSize: 12 },
+    languageChipTextActive: { color: theme.surface },
   });

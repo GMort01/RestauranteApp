@@ -90,6 +90,7 @@ export interface MenuFilters {
 }
 
 export async function fetchMenuItems(filters?: MenuFilters): Promise<MenuItem[]> {
+  // Construye filtros opcionales para reutilizar un único endpoint de menú.
   // Query params opcionales para mantener una API de filtros flexible.
   const params = new URLSearchParams();
   if (filters?.restaurant_id) params.append('restaurant_id', filters.restaurant_id);
@@ -142,6 +143,7 @@ export interface CreatedOrderResponse {
 }
 
 export async function createOrder(payload: OrderPayload): Promise<CreatedOrderResponse> {
+  // Envía la intención de compra y deja el recálculo de montos al backend.
   // El backend recalcula subtotal/total; este payload es una intencion de compra.
   return requestJson<CreatedOrderResponse>(`${API_BASE_URL}/orders/`, {
     method: 'POST',
@@ -230,6 +232,7 @@ export async function sendChatMessage(
   history: ChatMessagePayload[],
   message: string
 ): Promise<ChatResult> {
+  // Bloquea concurrencia accidental para no duplicar turnos ni saturar el chat.
   if (isRequestActive) {
     throw new ApiError(
       '¡Vas muy rápido! Por favor, espera unos segundos antes de enviar otro mensaje.',

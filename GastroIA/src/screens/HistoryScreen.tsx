@@ -16,6 +16,7 @@ import { useNavigation } from '@react-navigation/native';
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { useSettings } from '../context/SettingsContext';
 import { useHistory } from '../context/HistoryContext';
+import { getHistoryVisualSystem } from '../theme/historyVisual';
 import { RootStackParamList, Purchase, CartItem, Theme } from '../types';
 
 type NavigationProp = NativeStackNavigationProp<RootStackParamList, 'History'>;
@@ -27,8 +28,10 @@ export default function HistoryScreen() {
   const navigation = useNavigation<NavigationProp>();
   const { theme } = useSettings();
   const { purchaseHistory = [] } = useHistory();
+  const visualSystem = getHistoryVisualSystem(theme);
   const styles = getStyles(theme, horizontalPadding, contentMaxWidth);
 
+  // Métricas globales del historial usadas por el resumen superior.
   const totalSpent = purchaseHistory.reduce((sum, purchase) => sum + purchase.total, 0);
   const averageTip =
     purchaseHistory.length > 0
@@ -38,6 +41,7 @@ export default function HistoryScreen() {
       : 0;
   const ordersCount = purchaseHistory.length;
 
+  // Reduce el historial a una categoría dominante para resumir comportamiento de compra.
   const categoryCounts = purchaseHistory.reduce<Record<string, number>>((counts, purchase) => {
     purchase.items.forEach((item: CartItem) => {
       const category = item.categoria || 'Otros';
@@ -53,8 +57,9 @@ export default function HistoryScreen() {
     return best;
   }, null);
 
+  // Renderiza cada compra completa reutilizando el mismo lenguaje visual del perfil.
   const renderPurchase = ({ item }: ListRenderItemInfo<Purchase>) => (
-    <View style={styles.purchaseCard}>
+    <View style={[styles.purchaseCard, visualSystem.surfaces.shell, visualSystem.thinShadow]}>
       <Text style={styles.purchaseDate}>{item.date}</Text>
       {item.backendOrderId ? (
         <Text style={styles.orderIdText}>Pedido backend #{item.backendOrderId}</Text>
@@ -94,7 +99,7 @@ export default function HistoryScreen() {
         <Text style={styles.title}>Historial de Compras</Text>
 
         {ordersCount > 0 && (
-          <View style={styles.summaryCard}>
+          <View style={[styles.summaryCard, visualSystem.surfaces.shell, visualSystem.softShadow]}>
             <Text style={styles.summaryLabel}>Pedidos totales: {ordersCount}</Text>
             <Text style={styles.summaryLabel}>Gasto total: ${totalSpent}</Text>
             <Text style={styles.summaryLabel}>Propina promedio: ${averageTip}</Text>
@@ -151,7 +156,7 @@ const getStyles = (theme: Theme, horizontalPadding: number, contentMaxWidth?: nu
     content: {
       flex: 1,
       paddingHorizontal: horizontalPadding,
-      paddingTop: 20,
+      paddingTop: 16,
       width: '100%',
       maxWidth: contentMaxWidth,
       alignSelf: 'center',
@@ -164,9 +169,9 @@ const getStyles = (theme: Theme, horizontalPadding: number, contentMaxWidth?: nu
     },
     summaryCard: {
       backgroundColor: theme.surface,
-      borderRadius: 16,
-      padding: 16,
-      marginBottom: 20,
+      borderRadius: 18,
+      padding: 14,
+      marginBottom: 16,
       borderWidth: 1,
       borderColor: theme.border,
     },
@@ -176,13 +181,13 @@ const getStyles = (theme: Theme, horizontalPadding: number, contentMaxWidth?: nu
       marginBottom: 6,
     },
     historyList: {
-      paddingBottom: 30,
+      paddingBottom: 24,
     },
     purchaseCard: {
       backgroundColor: theme.surface,
-      borderRadius: 14,
-      padding: 16,
-      marginBottom: 12,
+      borderRadius: 18,
+      padding: 14,
+      marginBottom: 10,
       borderWidth: 1,
       borderColor: theme.border,
     },

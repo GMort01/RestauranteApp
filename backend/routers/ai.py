@@ -111,6 +111,7 @@ def _client_key(request: Request, action: str) -> str:
 
 
 def _check_rate_limit(request: Request, action: str) -> None:
+    # Controla ritmo de uso por IP para proteger endpoints costosos de IA.
     now = time.monotonic()
     window = RATE_WINDOWS_SECONDS[action]
     max_requests = RATE_MAX_REQUESTS[action]
@@ -191,6 +192,7 @@ def _sanitize_preferences(preferences: AnalyzeResponse) -> AnalyzeResponse:
 
 
 def _local_fallback_preferences(text: str) -> AnalyzeResponse:
+    # Extrae una intención mínima local cuando Gemini no está disponible o falla.
     normalized = _normalize_text(text)
     tokens = [token for token in re.split(r"[^a-z0-9]+", normalized) if token and token not in LOCAL_STOPWORDS]
 
@@ -229,6 +231,7 @@ def _local_fallback_preferences(text: str) -> AnalyzeResponse:
 
 
 def _local_chat_response(data: ChatRequest) -> ChatResponse:
+    # Mantiene conversación funcional sin Gemini reutilizando contexto reciente del usuario.
     current_text = data.message or ""
     if data.history:
         last_user_messages = [msg.text for msg in data.history if msg.role == "user" and msg.text]
@@ -314,6 +317,7 @@ def analyze_intent(data: AnalyzeRequest, request: Request):
     Recibe texto libre del usuario y devuelve preferencias estructuradas
     para que el sistema de filtros pueda encontrar los platos correctos.
     """
+    # Endpoint principal para traducir lenguaje natural a filtros consumibles por el frontend.
     _check_rate_limit(request, "analyze")
     logger.debug(f"📝 Analizando intent: '{data.text[:50]}...'")
     
